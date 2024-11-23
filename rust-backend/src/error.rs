@@ -1,5 +1,6 @@
 use actix_web::{HttpResponse, ResponseError};
 use thiserror::Error;
+use serde_json::json;
 
 #[derive(Error, Debug)]
 pub enum ServiceError {
@@ -25,23 +26,41 @@ pub enum ServiceError {
 impl ResponseError for ServiceError {
     fn error_response(&self) -> HttpResponse {
         match self {
-            ServiceError::InternalError(_) => {
-                HttpResponse::InternalServerError().json(self.to_string())
+            ServiceError::InternalError(msg) => {
+                HttpResponse::InternalServerError().json(json!({
+                    "error": "Internal Server Error",
+                    "message": msg
+                }))
             }
-            ServiceError::AuthenticationError(_) => {
-                HttpResponse::Unauthorized().json(self.to_string())
+            ServiceError::AuthenticationError(msg) => {
+                HttpResponse::Unauthorized().json(json!({
+                    "error": "Authentication Error",
+                    "message": msg
+                }))
             }
-            ServiceError::ValidationError(_) => {
-                HttpResponse::BadRequest().json(self.to_string())
+            ServiceError::ValidationError(msg) => {
+                HttpResponse::BadRequest().json(json!({
+                    "error": "Validation Error",
+                    "message": msg
+                }))
             }
-            ServiceError::AudioProcessing(_) => {
-                HttpResponse::UnprocessableEntity().json(self.to_string())
+            ServiceError::AudioProcessing(msg) => {
+                HttpResponse::UnprocessableEntity().json(json!({
+                    "error": "Audio Processing Error",
+                    "message": msg
+                }))
             }
-            ServiceError::DatabaseError(_) => {
-                HttpResponse::InternalServerError().json(self.to_string())
+            ServiceError::DatabaseError(msg) => {
+                HttpResponse::InternalServerError().json(json!({
+                    "error": "Database Error",
+                    "message": msg
+                }))
             }
-            ServiceError::NotFound(_) => {
-                HttpResponse::NotFound().json(self.to_string())
+            ServiceError::NotFound(msg) => {
+                HttpResponse::NotFound().json(json!({
+                    "error": "Not Found",
+                    "message": msg
+                }))
             }
         }
     }

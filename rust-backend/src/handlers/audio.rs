@@ -1,6 +1,6 @@
 use actix_web::{post, web, Error, HttpResponse};
 use actix_multipart::Multipart;
-use futures::{StreamExt, TryStreamExt};
+use futures::StreamExt;
 use uuid::Uuid;
 use crate::models::audio::{AudioChunk, AudioMetadata};
 use crate::services::audio_processor::AudioProcessor;
@@ -14,21 +14,28 @@ pub async fn upload(
 
     while let Some(item) = payload.next().await {
         let mut field = item?;
-        let content_type = field.content_disposition().unwrap();
-        let filename = content_type.get_filename().unwrap().to_string();
+        let content_disposition = field.content_disposition();
+        let filename = content_disposition
+            .get_filename()
+            .unwrap_or("unnamed.wav")
+            .to_string();
 
         let mut data = Vec::new();
         while let Some(chunk) = field.next().await {
             data.extend_from_slice(&chunk?);
         }
 
+        let size = data.len();
+
         let audio_chunk = AudioChunk {
             id: Uuid::new_v4(),
             data,
             metadata: AudioMetadata {
                 filename,
-                content_type: field.content_type().unwrap().to_string(),
-                size: data.len(),
+                content_type: field.content_type()
+                    .map(|m| m.to_string())
+                    .unwrap_or_else(|| "audio/wav".to_string()),
+                size,
             },
         };
 
@@ -49,7 +56,7 @@ pub async fn upload(
 
 #[post("/process")]
 pub async fn process(
-    app_state: web::Data<crate::models::AppState>,
+    _app_state: web::Data<crate::models::AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Process endpoint placeholder",
@@ -59,7 +66,7 @@ pub async fn process(
 
 #[post("/stream")]
 pub async fn stream(
-    app_state: web::Data<crate::models::AppState>,
+    _app_state: web::Data<crate::models::AppState>,
 ) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Stream endpoint placeholder",

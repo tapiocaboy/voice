@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use tracing_subscriber::fmt::format::FmtSpan;
 
 mod config;
+mod error;
 mod handlers;
 mod models;
 mod services;
@@ -25,7 +26,8 @@ async fn main() -> std::io::Result<()> {
         .init();
 
     // Load configuration
-    let config = Config::from_env().expect("Failed to load configuration");
+    let config = Config::from_env()
+        .expect("Failed to load configuration");
 
     // Initialize database connection
     let db_pool = PgPool::connect(&config.database_url)
@@ -42,6 +44,8 @@ async fn main() -> std::io::Result<()> {
         redis: redis_client,
         config: config.clone(),
     });
+
+    println!("Starting server at http://localhost:{}", config.port);
 
     // Start HTTP server
     HttpServer::new(move || {
