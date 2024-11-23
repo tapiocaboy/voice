@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_RUST_API_URL=http://rust-backend:8000
+      - NEXT_PUBLIC_PYTHON_API_URL=http://python-backend:8001
+      - NEXT_PUBLIC_WS_URL=ws://rust-backend:8000/ws
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - rust-backend
+      - python-backend
+
+  rust-backend:
+    build:
+      context: ./rust-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://user:password@postgres:5432/voice_analytics
+      - REDIS_URL=redis://redis:6379
+      - PYTHON_SERVICE_URL=http://python-backend:8001
+      - JWT_SECRET=${JWT_SECRET}
+      - RUST_LOG=debug
+    volumes:
+      - audio_data:/app/audio_data
+    depends_on:
+      - postgres
+      - redis
+
+  python-backend:
+    build:
+      context: ./python-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - WHISPER_MODEL=medium
+      - CUDA_VISIBLE_DEVICES=0
+      - HF_TOKEN=${HUGGING_FACE_TOKEN}
+    volumes:
+      - ./models:/app/models
+      - audio_data:/app/audio_data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=voice_analytics
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  audio_data:
+  prometheus_data:
+  grafana_data: 

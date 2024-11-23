@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'rust-backend'
+    static_configs:
+      - targets: ['rust-backend:8000']
+    metrics_path: '/metrics'
+
+  - job_name: 'python-backend'
+    static_configs:
+      - targets: ['python-backend:8001']
+    metrics_path: '/metrics'
+
+  - job_name: 'ml-models'
+    static_configs:
+      - targets:
+        - 'whisper:9090'
+        - 'emotion:9091'
+        - 'diarization:9092'
+    metrics_path: '/metrics' 

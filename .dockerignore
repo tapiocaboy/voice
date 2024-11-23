@@ -1,0 +1,33 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies
+**/node_modules
+**/target
+**/__pycache__
+**/*.pyc
+**/.venv
+
+# Environment
+.env
+.env.*
+
+# Development
+**/.vscode
+**/.idea
+**/*.log
+
+# Build outputs
+**/dist
+**/build
+**/.next
+
+# Documentation
+README.md
+CHANGELOG.md
+docs/
+
+# Testing
+**/coverage
+**/.pytest_cache 
