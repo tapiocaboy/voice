@@ -2,7 +2,10 @@ use actix_web::{web, App, HttpServer};
 use actix_cors::Cors;
 use sqlx::PgPool;
 use tracing_subscriber::fmt::format::FmtSpan;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
+mod api_docs;
 mod config;
 mod error;
 mod handlers;
@@ -10,6 +13,7 @@ mod models;
 mod services;
 mod utils;
 
+use crate::api_docs::ApiDoc;
 use crate::config::Config;
 use crate::handlers::{audio, analysis, health};
 use crate::models::AppState;
@@ -46,6 +50,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     println!("Starting server at http://localhost:{}", config.port);
+    println!("Swagger UI available at http://localhost:{}/swagger-ui/", config.port);
 
     // Start HTTP server
     HttpServer::new(move || {
@@ -58,6 +63,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .app_data(app_state.clone())
+            // Add Swagger UI
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", ApiDoc::openapi())
+            )
             .service(
                 web::scope("/api")
                     .service(health::health_check)

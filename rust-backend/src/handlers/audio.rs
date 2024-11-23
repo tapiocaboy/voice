@@ -5,6 +5,22 @@ use uuid::Uuid;
 use crate::models::audio::{AudioChunk, AudioMetadata};
 use crate::services::audio_processor::AudioProcessor;
 
+/// Upload audio file for processing
+#[utoipa::path(
+    post,
+    path = "/api/audio/upload",
+    request_body(
+        content = AudioChunk,
+        description = "Audio file to process",
+        content_type = "multipart/form-data"
+    ),
+    responses(
+        (status = 200, description = "Audio uploaded successfully", body = Vec<ProcessedAudio>),
+        (status = 400, description = "Invalid audio data"),
+        (status = 500, description = "Server error")
+    ),
+    tag = "audio"
+)]
 #[post("/upload")]
 pub async fn upload(
     mut payload: Multipart,
@@ -54,6 +70,16 @@ pub async fn upload(
     Ok(HttpResponse::Ok().json(results))
 }
 
+/// Process audio file
+#[utoipa::path(
+    post,
+    path = "/api/audio/process",
+    responses(
+        (status = 200, description = "Audio processed successfully"),
+        (status = 500, description = "Server error")
+    ),
+    tag = "audio"
+)]
 #[post("/process")]
 pub async fn process(
     _app_state: web::Data<crate::models::AppState>,
@@ -64,6 +90,16 @@ pub async fn process(
     })))
 }
 
+/// Stream audio processing
+#[utoipa::path(
+    post,
+    path = "/api/audio/stream",
+    responses(
+        (status = 200, description = "Stream started successfully"),
+        (status = 500, description = "Server error")
+    ),
+    tag = "audio"
+)]
 #[post("/stream")]
 pub async fn stream(
     _app_state: web::Data<crate::models::AppState>,
